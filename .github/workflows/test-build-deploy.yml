@@ -7,8 +7,84 @@ on:
   pull_request:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: appuser
+          POSTGRES_PASSWORD: example
+          POSTGRES_DB: appdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U appuser -d appdb"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: API syntax check
+        run: |
+          cd api
+          npm install
+          node --check app.js
+          node --check src/app.js
+      - name: Auth syntax check
+        run: |
+          cd auth
+          npm install
+          node --check app.js
+          node --check src/app.js
+      - name: Frontend build check
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+      - name: Init database
+        env:
+          PGPASSWORD: example
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql -h localhost -U appuser -d appdb -f k8s/postgres-init.sql
+      - name: Start auth and api
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_USER: appuser
+          POSTGRES_PASSWORD: example
+          POSTGRES_DB: appdb
+          REDIS_HOST: localhost
+        run: |
+          (cd auth && PORT=3001 node app.js &) 
+          (cd api && PORT=3002 node app.js &)
+          sleep 5
+      - name: Smoke tests
+        run: |
+          curl -f http://localhost:3001/health
+          curl -f http://localhost:3002/health
+          curl -f -X POST http://localhost:3001/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"admin@library.local","password":"admin123"}'
+
   build:
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
