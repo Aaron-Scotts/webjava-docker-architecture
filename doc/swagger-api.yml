@@ -1,0 +1,948 @@
+openapi: 3.0.3
+info:
+  title: Riubs Library API
+  version: 1.0.0
+  description: Swagger/OpenAPI specification for the API service.
+servers:
+  - url: http://localhost:3000
+    description: API service direct access
+  - url: http://localhost:8080/api
+    description: Through frontend reverse proxy
+tags:
+  - name: Health
+  - name: Books
+  - name: CustomBooks
+  - name: Favorites
+  - name: Rentals
+  - name: Stats
+  - name: Admin
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: UUID
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: riubs_auth
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        stock:
+          type: integer
+        cover_url:
+          type: string
+          nullable: true
+        added_at:
+          type: string
+          format: date-time
+      required: [id, title, author, category, price]
+    BookCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        coverUrl:
+          type: string
+        stock:
+          type: integer
+      required: [title, author, category, price]
+    BookImportItem:
+      type: object
+      properties:
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        coverUrl:
+          type: string
+        cover_url:
+          type: string
+        stock:
+          type: integer
+      required: [title, author, category, price]
+    CustomBook:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        cover_url:
+          type: string
+          nullable: true
+        source:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required: [id, title, author, category, price]
+    Favorite:
+      type: object
+      properties:
+        favorite_id:
+          type: integer
+        source:
+          type: string
+          enum: [library, custom]
+        book_id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        cover_url:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required: [favorite_id, source, book_id, title, author, category, price]
+    Rental:
+      type: object
+      properties:
+        id:
+          type: integer
+        rented_at:
+          type: string
+          format: date-time
+        returned_at:
+          type: string
+          format: date-time
+          nullable: true
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        cover_url:
+          type: string
+          nullable: true
+      required: [id, rented_at, title, author, category, price]
+    MonthCount:
+      type: object
+      properties:
+        month:
+          type: string
+          example: "2026-02"
+        count:
+          type: integer
+      required: [month, count]
+    CategoryCount:
+      type: object
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+      required: [category, count]
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        budget:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+      required: [id, name, email, role, budget]
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Service health
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                required: [status]
+  /books:
+    get:
+      tags: [Books]
+      summary: List books
+      security: []
+      responses:
+        "200":
+          description: Books list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags: [Books]
+      summary: Create a book (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /books/import:
+    post:
+      tags: [Books]
+      summary: Bulk import books (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    $ref: "#/components/schemas/BookImportItem"
+                - type: object
+                  properties:
+                    books:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/BookImportItem"
+                  required: [books]
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inserted:
+                    type: integer
+                required: [inserted]
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /books/{id}:
+    get:
+      tags: [Books]
+      summary: Get one book
+      security: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /custom-books:
+    get:
+      tags: [CustomBooks]
+      summary: List current user custom books
+      responses:
+        "200":
+          description: Custom books list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomBook"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /custom-books/import:
+    post:
+      tags: [CustomBooks]
+      summary: Bulk import custom books for current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    $ref: "#/components/schemas/BookImportItem"
+                - type: object
+                  properties:
+                    books:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/BookImportItem"
+                  required: [books]
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inserted:
+                    type: integer
+                required: [inserted]
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /favorites:
+    get:
+      tags: [Favorites]
+      summary: List favorites for current user
+      responses:
+        "200":
+          description: Favorites list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Favorite"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags: [Favorites]
+      summary: Add a favorite (catalog or custom)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookId:
+                  type: integer
+                customBookId:
+                  type: integer
+      responses:
+        "201":
+          description: Favorite created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                required: [id]
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /favorites/{id}:
+    delete:
+      tags: [Favorites]
+      summary: Delete a favorite
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Favorite deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required: [deleted]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Favorite not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /rentals:
+    post:
+      tags: [Rentals]
+      summary: Rent a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookId:
+                  type: integer
+              required: [bookId]
+      responses:
+        "201":
+          description: Rented
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: rented
+                  budget:
+                    type: number
+                required: [message, budget]
+        "400":
+          description: Business error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /rentals/{id}/return:
+    post:
+      tags: [Rentals]
+      summary: Return a rented book
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: returned
+                required: [message]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Rental not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /rentals/current:
+    get:
+      tags: [Rentals]
+      summary: List currently rented books for current user
+      responses:
+        "200":
+          description: Current rentals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rental"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /rentals/history:
+    get:
+      tags: [Rentals]
+      summary: List rental history for current user
+      responses:
+        "200":
+          description: Rental history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rental"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /stats/user:
+    get:
+      tags: [Stats]
+      summary: User rental analytics
+      responses:
+        "200":
+          description: Analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rentalTrend:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MonthCount"
+                  categoryBreakdown:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CategoryCount"
+                required: [rentalTrend, categoryBreakdown]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List users (admin)
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/users/{id}/budget:
+    patch:
+      tags: [Admin]
+      summary: Update user budget (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                budget:
+                  type: number
+              required: [budget]
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/books:
+    get:
+      tags: [Admin]
+      summary: List books (admin)
+      responses:
+        "200":
+          description: Books list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/books/{id}/stock:
+    patch:
+      tags: [Admin]
+      summary: Update book stock (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stock:
+                  type: integer
+                  minimum: 0
+              required: [stock]
+      responses:
+        "200":
+          description: Updated book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/stats:
+    get:
+      tags: [Admin]
+      summary: Global stats (admin)
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totals:
+                    type: object
+                    properties:
+                      users:
+                        type: integer
+                      books:
+                        type: integer
+                      rentals:
+                        type: integer
+                    required: [users, books, rentals]
+                  usersByMonth:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MonthCount"
+                  booksByMonth:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MonthCount"
+                  rentalsByMonth:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MonthCount"
+                required: [totals, usersByMonth, booksByMonth, rentalsByMonth]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
