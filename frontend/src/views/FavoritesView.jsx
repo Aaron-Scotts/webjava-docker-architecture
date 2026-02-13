@@ -4,13 +4,7 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { money } from "../utils/money.js";
 
-export default function FavoritesView({
-  favorites,
-  customBooks,
-  customBooksFileRef,
-  onRemoveFavorite,
-  onUploadCustom,
-  onFavorite,
+export default function FavoritesView({favorites,customBooks,customBooksFileRef,onRemoveFavorite,onUploadCustom,onFavorite,
 }) {
   const defaultColDef = useMemo(() => ({ sortable: true, resizable: true, flex: 1 }), []);
 

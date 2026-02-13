@@ -43,53 +43,10 @@ export function useLibraryApp() {
     [token]
   );
 
-  const {
-    loadBooks,
-    loadFavorites,
-    loadCustomBooks,
-    loadRentals,
-    loadAdminData,
-    refreshAll,
-    loadSession,
-    reloadView,
-  } = useLibraryLoaders({
-    apiFetch,
-    token,
-    user,
-    adminVisible,
-    setToken,
-    setUser,
-    setStatus,
-    setView,
-    setBooks,
-    setFavorites,
-    setCustomBooks,
-    setCurrentRentals,
-    setHistoryRentals,
-    setUserStats,
-    setAdminStats,
-    setAdminUsers,
-    setAdminBooks,
-  });
+  const {loadBooks,loadFavorites,loadCustomBooks,loadRentals,loadAdminData,refreshAll,loadSession,reloadView,
+  } = useLibraryLoaders({apiFetch,token,user,adminVisible,setToken,setUser,setStatus,setView,setBooks,setFavorites,setCustomBooks,setCurrentRentals,setHistoryRentals,setUserStats,setAdminStats,setAdminUsers,setAdminBooks,});
 
-  const domainActions = useLibraryActions({
-    apiFetch,
-    refs,
-    showToast,
-    books,
-    budgetEdits,
-    stockEdits,
-    setToken,
-    setUser,
-    setStatus,
-    setView,
-    loadFavorites,
-    loadCustomBooks,
-    loadRentals,
-    loadBooks,
-    loadAdminData,
-    refreshAll,
-  });
+  const domainActions = useLibraryActions({apiFetch,refs,showToast,books,budgetEdits,stockEdits,setToken,setUser,setStatus,setView,loadFavorites,loadCustomBooks,loadRentals,loadBooks,loadAdminData,refreshAll,});
 
   const handleNav = useCallback(
     (nextView) => {

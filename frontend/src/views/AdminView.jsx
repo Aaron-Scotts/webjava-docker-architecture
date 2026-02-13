@@ -1,19 +1,6 @@
 import ChartCanvas from "../components/ChartCanvas.jsx";
 
-export default function AdminView({
-  adminStats,
-  adminUsers,
-  adminBooks,
-  adminCharts,
-  budgetEdits,
-  stockEdits,
-  refs,
-  onBudgetEdit,
-  onStockEdit,
-  onUpdateBudget,
-  onUpdateStock,
-  onAddBook,
-  onImportBooks,
+export default function AdminView({adminStats,adminUsers,adminBooks,adminCharts,budgetEdits,stockEdits,refs,onBudgetEdit,onStockEdit,onUpdateBudget,onUpdateStock,onAddBook,onImportBooks,
 }) {
   return (
     <section className="panel" id="view-admin">
