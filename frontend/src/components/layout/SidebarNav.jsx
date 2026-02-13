@@ -1,27 +1,26 @@
-import { MAIN_NAV_ITEMS, VIEW_ADMIN } from "../../config/views.js";
+import { NavLink } from "react-router-dom";
+import { MAIN_NAV_ITEMS, VIEW_ADMIN, viewToPath } from "../../config/views.js";
 
-export default function SidebarNav({ currentView, onNavigate, adminVisible }) {
+export default function SidebarNav({ adminVisible }) {
   return (
     <nav>
       <h3>Navigate</h3>
       {MAIN_NAV_ITEMS.map((item) => (
-        <button
+        <NavLink
           key={item.key}
-          type="button"
-          className={currentView === item.key ? "active" : ""}
-          onClick={() => onNavigate(item.key)}
+          to={viewToPath(item.key)}
+          className={({ isActive }) => (isActive ? "active" : "")}
         >
           {item.label}
-        </button>
+        </NavLink>
       ))}
       {adminVisible && (
-        <button
-          type="button"
-          className={currentView === VIEW_ADMIN ? "active" : ""}
-          onClick={() => onNavigate(VIEW_ADMIN)}
+        <NavLink
+          to={viewToPath(VIEW_ADMIN)}
+          className={({ isActive }) => (isActive ? "active" : "")}
         >
           Admin Studio
-        </button>
+        </NavLink>
       )}
     </nav>
   );
